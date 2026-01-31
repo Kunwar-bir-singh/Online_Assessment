@@ -11,8 +11,8 @@ import {
   tableName: 'products',
   schema: 'public',
   timestamps: true,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 })
 export class ProductsModel extends Model<ProductsModel> {
   @AutoIncrement

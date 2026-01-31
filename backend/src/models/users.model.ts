@@ -11,8 +11,8 @@ import {
   tableName: 'users',
   schema: 'public',
   timestamps: true,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 })
 export class UsersModel extends Model<UsersModel> {
   @AutoIncrement

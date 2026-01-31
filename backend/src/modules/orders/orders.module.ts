@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { OrdersModel } from 'src/models/orders.model';
@@ -16,6 +17,10 @@ import { OrderSseGateway } from './events/order-sse.gateway';
       OrdersItemsModel,
       ProductsModel,
     ]),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+      signOptions: { expiresIn: '15m' },
+    }),
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrderSseGateway],

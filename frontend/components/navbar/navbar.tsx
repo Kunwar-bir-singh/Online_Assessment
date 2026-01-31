@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/cart-context';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
@@ -10,17 +11,27 @@ interface NavbarProps {
 }
 
 export function Navbar({ onCartClick }: NavbarProps) {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
 
   if (!user) return null;
 
+  const goToMenu = () => {
+    router.push('/');
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
-          <h1 className="text-2xl font-bold text-primary">FoodHub</h1>
+          <h1 
+            className="text-2xl font-bold text-primary cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={goToMenu}
+          >
+            FoodHub
+          </h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
               Welcome, {user.name}

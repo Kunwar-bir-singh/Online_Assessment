@@ -45,11 +45,22 @@ export class OrderSseGateway {
   /**
    * Get the stream for SSE connection
    */
-  getOrderUpdatesStream(user_id: number, client: any): any {
+  getOrderUpdatesStream(user_id: number, client: any, order?: any): any {
     const unsubscribe = this.subscribe(user_id, client);
 
     // Send initial connection event
     client.write(`data: ${JSON.stringify({ type: 'connected', user_id })}\n\n`);
+
+    // If order is provided, send current status immediately
+    if (order) {
+      const statusEvent: OrderStatusUpdateEvent = {
+        order_id: order.order_id,
+        status: order.status,
+        timestamp: new Date(),
+        message: 'Current order status',
+      };
+      client.write(`data: ${JSON.stringify(statusEvent)}\n\n`);
+    }
 
     // client disconnect
     client.on('close', () => {

@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { AuthProvider } from '@/lib/auth-context';
 import { CartProvider } from '@/lib/cart-context';
 import { LoginForm } from '@/components/auth/login-form';
 import { RegisterForm } from '@/components/auth/register-form';
@@ -15,19 +14,19 @@ import { OrderStatus } from '@/components/order/order-status';
 type AppView = 'auth-login' | 'auth-register' | 'menu' | 'checkout' | 'order-status';
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [view, setView] = useState<AppView>('auth-login');
-  const [showRegister, setShowRegister] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const handleLoginSuccess = () => {
-    setView('menu');
-  };
-
-  const handleRegisterSuccess = () => {
-    setView('menu');
-  };
+  // Update view based on auth state
+  useEffect(() => {
+    if (!isLoading && user) {
+      setView('menu');
+    } else if (!isLoading && !user) {
+      setView('auth-login');
+    }
+  }, [user, isLoading]);
 
   const handleCheckout = () => {
     setView('checkout');
@@ -46,6 +45,14 @@ function AppContent() {
     setView('menu');
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar onCartClick={() => setIsCartOpen(true)} />
@@ -57,8 +64,7 @@ function AppContent() {
         {view === 'auth-login' && (
           <div className="flex justify-center">
             <LoginForm
-              onSwitchToRegister={() => setShowRegister(true)}
-              onLoginSuccess={handleLoginSuccess}
+              onSwitchToRegister={() => setView('auth-register')}
             />
           </div>
         )}
@@ -66,8 +72,7 @@ function AppContent() {
         {view === 'auth-register' && (
           <div className="flex justify-center">
             <RegisterForm
-              onSwitchToLogin={() => setShowRegister(false)}
-              onRegisterSuccess={handleRegisterSuccess}
+              onSwitchToLogin={() => setView('auth-login')}
             />
           </div>
         )}
@@ -106,41 +111,10 @@ function AppContent() {
   );
 }
 
-// Auth mode selection
-function AuthModeSelector() {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-primary">FoodHub</h1>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex justify-center">
-        {mode === 'login' ? (
-          <LoginForm
-            onSwitchToRegister={() => setMode('register')}
-            onLoginSuccess={() => window.location.reload()}
-          />
-        ) : (
-          <RegisterForm
-            onSwitchToLogin={() => setMode('login')}
-            onRegisterSuccess={() => window.location.reload()}
-          />
-        )}
-      </main>
-    </div>
-  );
-}
-
 export default function Home() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <AppContent />
-      </CartProvider>
-    </AuthProvider>
+    <CartProvider>
+      <AppContent />
+    </CartProvider>
   );
 }

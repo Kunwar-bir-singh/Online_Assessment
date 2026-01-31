@@ -39,28 +39,32 @@ export class AuthService {
       password: hashedPassword,
       address: registerDto.address,
     } as any);
-
-    return this.generateTokens(user);
+    
+    const userData = user.get({ plain: true });
+    console.log("userData", userData);
+    
+    return this.generateTokens(userData);
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.usersModel.findOne({
       where: { email: loginDto.email },
+      raw : true
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('This user does not exist');
     }
 
     const isPasswordValid = await bcrypt.compare(
       loginDto.password,
       user.password,
     );
-
+    
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    
     return this.generateTokens(user);
   }
 
@@ -97,6 +101,8 @@ export class AuthService {
     const payload = {
       sub: user.user_id,
       email: user.email,
+      name: user.name,
+      address: user.address,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -104,7 +110,7 @@ export class AuthService {
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+      secret: process.env.JWT_REFRESH_SECRET,
       expiresIn: '7d',
     });
 

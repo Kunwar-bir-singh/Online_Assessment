@@ -3,6 +3,7 @@
 import { useCart } from '@/lib/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { X, Plus, Minus } from 'lucide-react';
 
@@ -12,6 +13,26 @@ interface CartSidebarProps {
 
 export function CartSidebar({ onCheckout }: CartSidebarProps) {
   const { items, removeItem, updateQuantity, getTotalPrice, getTotalItems } = useCart();
+  const { toast } = useToast();
+
+  const handleUpdateQuantity = (itemId: string, quantity: number, currentQuantity: number) => {
+    updateQuantity(itemId, quantity);
+    if (quantity > currentQuantity) {
+      toast({
+        title: 'Quantity updated',
+        description: 'Item quantity increased',
+      });
+    }
+  };
+
+  const handleRemove = (itemName: string) => {
+    removeItem(items.find(ci => ci.item.name === itemName)?.item.id || '');
+    toast({
+      title: 'Removed from cart',
+      description: `${itemName} removed from your cart`,
+      variant: 'destructive',
+    });
+  };
 
   if (items.length === 0) {
     return (
@@ -57,9 +78,10 @@ export function CartSidebar({ onCheckout }: CartSidebarProps) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() =>
-                    updateQuantity(
+                    handleUpdateQuantity(
                       cartItem.item.id,
-                      cartItem.quantity - 1
+                      cartItem.quantity - 1,
+                      cartItem.quantity
                     )
                   }
                   className="rounded-md bg-secondary p-1 hover:bg-muted"
@@ -71,9 +93,10 @@ export function CartSidebar({ onCheckout }: CartSidebarProps) {
                 </span>
                 <button
                   onClick={() =>
-                    updateQuantity(
+                    handleUpdateQuantity(
                       cartItem.item.id,
-                      cartItem.quantity + 1
+                      cartItem.quantity + 1,
+                      cartItem.quantity
                     )
                   }
                   className="rounded-md bg-secondary p-1 hover:bg-muted"
@@ -81,7 +104,7 @@ export function CartSidebar({ onCheckout }: CartSidebarProps) {
                   <Plus className="h-3 w-3" />
                 </button>
                 <button
-                  onClick={() => removeItem(cartItem.item.id)}
+                  onClick={() => handleRemove(cartItem.item.name)}
                   className="ml-auto rounded-md bg-secondary p-1 text-destructive hover:bg-red-100"
                 >
                   <X className="h-3 w-3" />

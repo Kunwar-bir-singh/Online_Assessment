@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import { MenuItem } from '@/lib/cart-context';
+import { productsApi, ApiError } from '@/lib/api';
 import { MenuCard } from './menu-card';
+import { useToast } from '@/hooks/use-toast';
+import { Spinner } from '@/components/ui/spinner';
+import { useEffect, useState } from 'react';
 
-const MENU_ITEMS: MenuItem[] = [
+// Fallback menu items when backend is not available
+const FALLBACK_MENU_ITEMS: MenuItem[] = [
   {
     id: '1',
     name: 'Classic Margherita',
@@ -71,14 +75,67 @@ const MENU_ITEMS: MenuItem[] = [
   },
 ];
 
+function convertBackendProductToMenuItem(product: any): MenuItem {
+  return {
+    id: product.product_id.toString(),
+    name: product.product_name,
+    description: product.description,
+    price: parseFloat(product.price),
+    image: product.image_url,
+    category: product.category,
+  };
+}
+
 export function MenuList() {
   const [activeCategory, setActiveCategory] = useState('All');
-  
-  const categories = ['All', ...new Set(MENU_ITEMS.map((item) => item.category))];
-  
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const products = await productsApi.getAll();
+        const menuItems = products.map(convertBackendProductToMenuItem);
+        setMenuItems(menuItems);
+        const uniqueCategories = ['All', ...new Set(menuItems.map((item) => item.category))];
+        setCategories(uniqueCategories);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+        // Fallback to static menu items
+        setMenuItems(FALLBACK_MENU_ITEMS);
+        const uniqueCategories = ['All', ...new Set(FALLBACK_MENU_ITEMS.map((item) => item.category))];
+        setCategories(uniqueCategories);
+        
+        const errorMessage = error instanceof ApiError 
+          ? error.message 
+          : 'Failed to load menu. Using offline menu.';
+        toast({
+          title: 'Notice',
+          description: errorMessage,
+          variant: 'default',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [toast]);
+
   const filteredItems = activeCategory === 'All'
-    ? MENU_ITEMS
-    : MENU_ITEMS.filter((item) => item.category === activeCategory);
+    ? menuItems
+    : menuItems.filter((item) => item.category === activeCategory);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

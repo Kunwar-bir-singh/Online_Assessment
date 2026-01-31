@@ -65,7 +65,7 @@ export function CartModal({ isOpen, onClose, onCheckout }: CartModalProps) {
                     <div className="flex-1 space-y-2">
                       <h4 className="text-sm font-medium">{cartItem.item.name}</h4>
                       <p className="text-sm font-semibold text-primary">
-                        ${(cartItem.item.price * cartItem.quantity).toFixed(2)}
+                        Rs. {(cartItem.item.price * cartItem.quantity).toFixed(2)}
                       </p>
                       <div className="flex items-center gap-1">
                         <button
@@ -108,7 +108,7 @@ export function CartModal({ isOpen, onClose, onCheckout }: CartModalProps) {
               <div className="border-t space-y-4 p-4">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-primary">${getTotalPrice().toFixed(2)}</span>
+                  <span className="text-primary">Rs. {getTotalPrice().toFixed(2)}</span>
                 </div>
                 <div className="flex gap-3">
                   <Button

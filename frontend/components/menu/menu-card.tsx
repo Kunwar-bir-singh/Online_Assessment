@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MenuItem, useCart } from '@/lib/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
 interface MenuCardProps {
@@ -13,10 +14,15 @@ interface MenuCardProps {
 export function MenuCard({ item }: MenuCardProps) {
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
+  const { toast } = useToast();
 
   const handleAddToCart = () => {
     addItem(item, quantity);
     setQuantity(1);
+    toast({
+      title: 'Added to cart',
+      description: `${quantity}x ${item.name} added to your cart`,
+    });
   };
 
   return (
@@ -34,7 +40,7 @@ export function MenuCard({ item }: MenuCardProps) {
         <p className="text-sm text-muted-foreground">{item.description}</p>
         <div className="mt-4 flex items-center justify-between">
           <span className="text-lg font-bold text-primary">
-            ${item.price.toFixed(2)}
+            Rs. {item.price.toFixed(2)}
           </span>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 rounded-md bg-secondary">
@@ -42,7 +48,7 @@ export function MenuCard({ item }: MenuCardProps) {
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="h-8 w-8 flex items-center justify-center text-sm font-medium hover:bg-muted"
               >
-                −
+                -
               </button>
               <span className="w-6 text-center text-sm">{quantity}</span>
               <button

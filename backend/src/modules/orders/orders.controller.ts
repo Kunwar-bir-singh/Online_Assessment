@@ -10,101 +10,62 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import type { Response } from 'express';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
-import { OrderSseGateway } from './events/order-sse.gateway';
 
-interface AuthenticatedUser {
-  id: number;
-  email: string;
-  name: string;
-}
-
-@Controller('orders')
-@UseGuards(AuthGuard('jwt'))
+@Controller('api/orders')
 export class OrdersController {
-  constructor(
-    private readonly ordersService: OrdersService,
-    private readonly orderSseGateway: OrderSseGateway,
-  ) {}
+  constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createOrderDto: CreateOrderDto, @Request() req: any) {
-    const user = req.user as AuthenticatedUser;
-    const order = await this.ordersService.create(createOrderDto, user.id);
-    return {
-      success: true,
-      message: 'Order created successfully',
-      data: order,
-    };
+  async create(
+    @Body() createOrderDto: CreateOrderDto,
+    @Request() req: any,
+  ) {
+    const user_id = req.user?.id;
+    
+    return this.ordersService.create(createOrderDto, user_id);
   }
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   async findAll(@Request() req: any) {
-    const user = req.user as AuthenticatedUser;
-    const orders = await this.ordersService.findAll(user.id);
-    return {
-      success: true,
-      data: orders,
-    };
+    const user_id = req?.user?.id;
+    return this.ordersService.findAll(user_id);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   async findOne(@Param('id') id: string, @Request() req: any) {
-    const user = req.user as AuthenticatedUser;
-    const order = await this.ordersService.findOne(+id);
-
-    // Verify order belongs to user
-    if (order.user_id !== user.id) {
-      return {
-        success: false,
-        message: 'Order not found',
-      };
-    }
-
-    return {
-      success: true,
-      data: order,
-    };
+    const user_id = req?.user?.id;
+    return this.ordersService.findOneWithDetails(+id, user_id);
   }
 
+  @Patch(':id/status')
+  @UseGuards(AuthGuard('jwt'))
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateOrderStatusDto,
+    @Request() req: any,
+  ) {
+    const user_id = req?.user?.id;
+    return this.ordersService.updateStatus(+id, updateStatusDto, user_id);
+  }
 
- // api to get the SSE stream
+  // SSE stream endpoint - uses token in query param since EventSource can't send headers
   @Get(':id/stream')
   async getOrderStream(
-    @Param('id') id: string,
-    @Request() req: any,
+    @Param('id') order_id: string,
+    @Query('token') token: string,
     @Res() res: Response,
   ) {
-    const user = req.user as AuthenticatedUser;
-    const order = await this.ordersService.findOne(+id);
-
-    // Verify order belongs to user
-    if (order.user_id !== user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied',
-      });
-    }
-
-    // Set SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
-
-    // Get SSE stream
-    this.orderSseGateway.getOrderUpdatesStream(user.id, res);
-
-    //  client disconnect
-    req.on('close', () => {
-      res.end();
-    });
+    return this.ordersService.getOrdersStream(res, token, order_id);
   }
 }

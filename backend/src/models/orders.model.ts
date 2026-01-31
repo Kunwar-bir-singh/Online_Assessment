@@ -5,38 +5,54 @@ import {
   DataType,
   PrimaryKey,
   AutoIncrement,
+  ForeignKey,
+  BelongsTo,
+  HasMany,
 } from 'sequelize-typescript';
-import { ForeignKey } from 'sequelize-typescript/dist/associations/foreign-key/foreign-key';
+
 import { UsersModel } from './users.model';
+import { OrdersItemsModel } from './orders_items.model';
+import { OrdersStatusModel } from './orders_status.model';
+
 
 @Table({
   tableName: 'orders',
   schema: 'public',
   timestamps: true,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 })
 export class OrdersModel extends Model<OrdersModel> {
   @PrimaryKey
   @AutoIncrement
-  @Column({
-    type: DataType.INTEGER,
-  })
+  @Column(DataType.INTEGER)
   order_id?: number;
 
   @ForeignKey(() => UsersModel)
-  @Column({
-    type: DataType.INTEGER,
-  })
+  @Column(DataType.INTEGER)
   user_id?: number;
 
-  @Column({
-    type: DataType.STRING,
+  @BelongsTo(() => UsersModel, {
+    foreignKey: 'user_id',
+    as: 'user',
   })
+  user?: UsersModel;
+
+  @Column(DataType.STRING)
   status?: string;
 
-  @Column({
-    type: DataType.STRING,
+  @Column(DataType.STRING)
+  total_amount?: string;
+
+  @HasMany(() => OrdersItemsModel, {
+    foreignKey: 'order_id',
+    as: 'items',
   })
-  total_amount?: number;
+  items?: OrdersItemsModel[];
+
+  @HasMany(() => OrdersStatusModel, {
+    foreignKey: 'order_id',
+    as: 'statuses',
+  })
+  statuses?: OrdersStatusModel[];
 }

@@ -11,8 +11,8 @@ import {
   tableName: 'users_token',
   schema: 'public',
   timestamps: true,
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 })
 export class UsersTokenModel extends Model<UsersTokenModel> {
   @AutoIncrement
@@ -23,10 +23,16 @@ export class UsersTokenModel extends Model<UsersTokenModel> {
     primaryKey: true,
     autoIncrement: true,
   })
+  unqiue_id?: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   user_id?: number;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
   })
   token: string;

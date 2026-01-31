@@ -1,25 +1,25 @@
 'use client';
 
-import React from "react"
-
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/cart-context';
 import { useAuth } from '@/lib/auth-context';
+import { ordersApi, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/hooks/use-toast';
 
 interface CheckoutFormProps {
-  onOrderPlaced: (orderId: string) => void;
   onBack: () => void;
 }
 
-export function CheckoutForm({ onOrderPlaced, onBack }: CheckoutFormProps) {
-  const { user, logout } = useAuth();
+export function CheckoutForm({ onBack }: CheckoutFormProps) {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   const { items, getTotalPrice, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return (
       <Card className="w-full max-w-2xl">
         <CardHeader>
@@ -27,7 +27,7 @@ export function CheckoutForm({ onOrderPlaced, onBack }: CheckoutFormProps) {
           <CardDescription>Please log in to continue with checkout</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={logout} className="w-full">
+          <Button onClick={onBack} className="w-full">
             Back to Login
           </Button>
         </CardContent>
@@ -37,37 +37,34 @@ export function CheckoutForm({ onOrderPlaced, onBack }: CheckoutFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
 
     try {
-      // Make API call to place order
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user?.id,
-          items: items.map((item) => ({
-            id: item.item.id,
-            quantity: item.quantity,
-          })),
-          totalPrice: getTotalPrice(),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to place order');
-      }
-
-      const data = await response.json();
+      const order = await ordersApi.create(
+        items.map((item) => ({
+          product_id: parseInt(item.item.id),
+          quantity: item.quantity,
+        }))
+      );
       clearCart();
-      onOrderPlaced(data.orderId);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to place order. Please try again.';
-      setError(errorMessage);
+      
+      toast({
+        title: 'Order Placed',
+        description: `Your order #${order.order_id} has been placed successfully.`,
+        variant: 'default',
+      });
+      
+      // Redirect to order status page
+      router.push(`/order/${order.order_id}`);
+    } catch (error) {
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to place order. Please try again.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -81,12 +78,6 @@ export function CheckoutForm({ onOrderPlaced, onBack }: CheckoutFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-4">
             <h3 className="font-semibold">Order Summary</h3>
             <div className="space-y-2 rounded-lg bg-secondary p-4">
@@ -96,13 +87,13 @@ export function CheckoutForm({ onOrderPlaced, onBack }: CheckoutFormProps) {
                     {cartItem.item.name} × {cartItem.quantity}
                   </span>
                   <span className="font-medium">
-                    ${(cartItem.item.price * cartItem.quantity).toFixed(2)}
+                    Rs. {(parseFloat(cartItem.item.price) * cartItem.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
               <div className="border-t border-border pt-2 flex justify-between font-bold">
                 <span>Total</span>
-                <span className="text-primary">${getTotalPrice().toFixed(2)}</span>
+                <span className="text-primary">Rs. {getTotalPrice().toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -129,7 +120,7 @@ export function CheckoutForm({ onOrderPlaced, onBack }: CheckoutFormProps) {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || items.length === 0}
               className="flex-1"
             >
               {isLoading ? 'Placing Order...' : 'Place Order'}
