@@ -13,7 +13,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new SuccessInterceptor());
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://online-assessment-2nhb.onrender.com'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://online-assessment-1-7tlz.onrender.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
   });
