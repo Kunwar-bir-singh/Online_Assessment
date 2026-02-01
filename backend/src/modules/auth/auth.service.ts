@@ -114,7 +114,7 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    // Store refresh token in database
+    // store refresh token in database
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 

@@ -14,7 +14,6 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
 import { OrderSseGateway } from './events/order-sse.gateway';
 import { Sequelize } from 'sequelize-typescript';
-import { log } from 'node:console';
 
 export const ORDER_STATUS = {
   PENDING: 'pending',
@@ -37,6 +36,7 @@ export class OrdersService {
     private ordersStatusModel: typeof OrdersStatusModel,
     @InjectModel(ProductsModel)
     private productsModel: typeof ProductsModel,
+    
     private orderSseGateway: OrderSseGateway,
     private readonly sequelize: Sequelize,
     private readonly jwtService: JwtService,

@@ -31,7 +31,7 @@ interface OrderStatusProps {
 export function OrderStatus({ orderId, onNewOrder }: OrderStatusProps) {
   const [status, setStatus] = useState<OrderStatusType>('received');
   const [error, setError] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(30 * 60);
+  const [timeLeft, setTimeLeft] = useState<number>(15);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -243,7 +243,7 @@ export function OrderStatus({ orderId, onNewOrder }: OrderStatusProps) {
                 <div className="mt-2 w-full bg-muted rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-primary h-full transition-all duration-1000"
-                    style={{ width: `${(timeLeft / (30 * 60)) * 100}%` }}
+                    style={{ width: `${(timeLeft / 20) * 100}%` }}
                   />
                 </div>
               </div>

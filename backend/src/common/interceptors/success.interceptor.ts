@@ -15,7 +15,10 @@ export interface ApiResponse<T> {
 }
 
 @Injectable()
-export class SuccessInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
+export class SuccessInterceptor<T> implements NestInterceptor<
+  T,
+  ApiResponse<T>
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -26,7 +29,6 @@ export class SuccessInterceptor<T> implements NestInterceptor<T, ApiResponse<T>>
         if (data && typeof data === 'object' && 'success' in data) {
           return data;
         }
-        // Wrap unformatted data
         return {
           success: true,
           data,
