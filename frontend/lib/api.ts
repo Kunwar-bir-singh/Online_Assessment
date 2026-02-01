@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { tokenManager, TokenData, UserData } from './token-manager';
+import { tokenManager, TokenData, UserData } from "./token-manager";
 
 // Backend URL configuration
 const getBackendUrl = () => {
-  if (typeof window === 'undefined') return 'http://localhost:3001';
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  
+  if (typeof window === "undefined") return "http://localhost:3001";
+  return process.env.NEXT_PUBLIC_BACKEND_URL;
 };
 
 const BACKEND_API_URL = getBackendUrl();
@@ -20,7 +21,7 @@ export class ApiError extends Error {
     super(message);
     this.status = status;
     this.data = data;
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
@@ -38,7 +39,7 @@ let refreshQueue: (() => void)[] = [];
 async function getAuthHeaders(): Promise<HeadersInit> {
   const token = tokenManager.getAccessToken();
   return {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -46,31 +47,31 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 async function refreshAccessToken(): Promise<void> {
   const refreshToken = tokenManager.getRefreshToken();
   if (!refreshToken) {
-    throw new ApiError('No refresh token', 401);
+    throw new ApiError("No refresh token", 401);
   }
 
   const response = await fetch(`${BACKEND_API_URL}/api/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken }),
   });
 
   const data = await handleResponse<ApiResponse<TokenData>>(response);
-  
+
   if (data.success && data.data) {
-    tokenManager.setTokens({ 
-      accessToken: data.data.accessToken, 
-      refreshToken: data.data.refreshToken 
+    tokenManager.setTokens({
+      accessToken: data.data.accessToken,
+      refreshToken: data.data.refreshToken,
     });
   } else {
-    throw new ApiError(data.message || 'Token refresh failed', 401);
+    throw new ApiError(data.message || "Token refresh failed", 401);
   }
 }
 
 // Custom fetch with automatic token refresh
 async function authFetch(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> {
   const response = await fetch(url, {
     ...options,
@@ -84,17 +85,17 @@ async function authFetch(
   if (response.status === 401 && tokenManager.getRefreshToken()) {
     if (!isRefreshing) {
       isRefreshing = true;
-      
+
       try {
         await refreshAccessToken();
         // Refresh successful, retry all queued requests
-        refreshQueue.forEach(cb => cb());
+        refreshQueue.forEach((cb) => cb());
         refreshQueue = [];
       } catch (error) {
         // Refresh failed, clear tokens and redirect to login
         tokenManager.clearTokens();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/?message=session_expired';
+        if (typeof window !== "undefined") {
+          window.location.href = "/?message=session_expired";
         }
         throw error;
       } finally {
@@ -130,7 +131,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw new ApiError(
       errorData.message || `HTTP Error: ${response.status}`,
       response.status,
-      errorData
+      errorData,
     );
   }
   return response.json();
@@ -138,38 +139,58 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 // Auth API
 export const authApi = {
-  async register(name: string, email: string, password: string, address: string): Promise<TokenData & { user: UserData }> {
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    address: string,
+  ): Promise<TokenData & { user: UserData }> {
     const response = await fetch(`${BACKEND_API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password, address }),
     });
-    const data = await handleResponse<ApiResponse<TokenData & { user: UserData }>>(response);
+    const data =
+      await handleResponse<ApiResponse<TokenData & { user: UserData }>>(
+        response,
+      );
     if (data.success && data.data) {
-      tokenManager.setTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
+      tokenManager.setTokens({
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+      });
       return data.data;
     }
-    throw new ApiError(data.message || 'Registration failed', 400);
+    throw new ApiError(data.message || "Registration failed", 400);
   },
 
-  async login(email: string, password: string): Promise<TokenData & { user: UserData }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<TokenData & { user: UserData }> {
     const response = await fetch(`${BACKEND_API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    const data = await handleResponse<ApiResponse<TokenData & { user: UserData }>>(response);
+    const data =
+      await handleResponse<ApiResponse<TokenData & { user: UserData }>>(
+        response,
+      );
     if (data.success && data.data) {
-      tokenManager.setTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
+      tokenManager.setTokens({
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+      });
       return data.data;
     }
-    throw new ApiError(data.message || 'Login failed', 400);
+    throw new ApiError(data.message || "Login failed", 400);
   },
 
   async logout(): Promise<void> {
     try {
       const response = await authFetch(`${BACKEND_API_URL}/api/auth/logout`, {
-        method: 'POST',
+        method: "POST",
       });
       await handleResponse(response);
     } finally {
@@ -179,19 +200,22 @@ export const authApi = {
 
   async refreshToken(): Promise<TokenData> {
     const refreshToken = tokenManager.getRefreshToken();
-    if (!refreshToken) throw new ApiError('No refresh token', 401);
+    if (!refreshToken) throw new ApiError("No refresh token", 401);
 
     const response = await fetch(`${BACKEND_API_URL}/api/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });
     const data = await handleResponse<ApiResponse<TokenData>>(response);
     if (data.success && data.data) {
-      tokenManager.setTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
+      tokenManager.setTokens({
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+      });
       return data.data;
     }
-    throw new ApiError(data.message || 'Token refresh failed', 400);
+    throw new ApiError(data.message || "Token refresh failed", 400);
   },
 };
 
@@ -210,14 +234,14 @@ export const productsApi = {
     const response = await authFetch(`${BACKEND_API_URL}/api/products`);
     const data = await handleResponse<ApiResponse<Product[]>>(response);
     if (data.success && data.data) return data.data;
-    throw new ApiError(data.message || 'Failed to fetch products', 400);
+    throw new ApiError(data.message || "Failed to fetch products", 400);
   },
 
   async getById(id: number): Promise<Product> {
     const response = await authFetch(`${BACKEND_API_URL}/api/products/${id}`);
     const data = await handleResponse<ApiResponse<Product>>(response);
     if (data.success && data.data) return data.data;
-    throw new ApiError(data.message || 'Product not found', 404);
+    throw new ApiError(data.message || "Product not found", 404);
   },
 };
 
@@ -238,26 +262,26 @@ export interface Order {
 export const ordersApi = {
   async create(items: OrderItem[]): Promise<Order> {
     const response = await authFetch(`${BACKEND_API_URL}/api/orders`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({ items }),
     });
     const data = await handleResponse<ApiResponse<Order>>(response);
     if (data.success && data.data) return data.data;
-    throw new ApiError(data.message || 'Failed to create order', 400);
+    throw new ApiError(data.message || "Failed to create order", 400);
   },
 
   async getAll(): Promise<Order[]> {
     const response = await authFetch(`${BACKEND_API_URL}/api/orders`);
     const data = await handleResponse<ApiResponse<Order[]>>(response);
     if (data.success && data.data) return data.data;
-    throw new ApiError(data.message || 'Failed to fetch orders', 400);
+    throw new ApiError(data.message || "Failed to fetch orders", 400);
   },
 
   async getById(id: number): Promise<Order> {
     const response = await authFetch(`${BACKEND_API_URL}/api/orders/${id}`);
     const data = await handleResponse<ApiResponse<Order>>(response);
     if (data.success && data.data) return data.data;
-    throw new ApiError(data.message || 'Order not found', 404);
+    throw new ApiError(data.message || "Order not found", 404);
   },
 
   getOrderStreamUrl(orderId: number): string {
