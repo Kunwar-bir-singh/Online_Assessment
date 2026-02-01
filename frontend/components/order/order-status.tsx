@@ -48,7 +48,7 @@ export function OrderStatus({ orderId, onNewOrder }: OrderStatusProps) {
       }
 
       try {
-        // Step 1: Fetch initial order status via REST API
+        // fetch initial order status
         const order = await ordersApi.getById(parseInt(orderId));
         setStatus(mapBackendStatusToFrontend(order.status));
         setError(null);
@@ -59,7 +59,7 @@ export function OrderStatus({ orderId, onNewOrder }: OrderStatusProps) {
         setIsLoading(false);
       }
 
-      // Step 2: Connect to SSE for real-time updates
+      // after, connect to SSE
       const streamUrl = ordersApi.getOrderStreamUrl(parseInt(orderId));
       eventSource = new EventSource(streamUrl);
 
