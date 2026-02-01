@@ -5,9 +5,8 @@ import { OrderStatusUpdateEvent } from '../dto/order.events';
 export class OrderSseGateway {
   private userClients = new Map<number, Set<any>>();
 
-  /**
-   * Subscribe a client to order updates for a specific user
-   */
+  // subscribes a client to order updates for a specific user
+
   subscribe(user_id: number, client: any): () => void {
     if (!this.userClients.has(user_id)) {
       this.userClients.set(user_id, new Set());
@@ -29,9 +28,8 @@ export class OrderSseGateway {
     };
   }
 
-  /**
-   * Broadcast order update to a specific user
-   */
+  // send the SSE update to a specific user
+
   sendToUser(user_id: number, event: OrderStatusUpdateEvent): void {
     const clients = this.userClients.get(user_id);
     if (clients) {
@@ -42,9 +40,8 @@ export class OrderSseGateway {
     }
   }
 
-  /**
-   * Get the stream for SSE connection
-   */
+  //get the stream for SSE connection
+
   getOrderUpdatesStream(user_id: number, client: any, order?: any): any {
     const unsubscribe = this.subscribe(user_id, client);
 
@@ -69,5 +66,4 @@ export class OrderSseGateway {
 
     return client;
   }
-
 }

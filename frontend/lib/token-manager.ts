@@ -56,7 +56,7 @@ class TokenManager {
   }
 
   setTokens(data: TokenData): void {
-    setCookie(ACCESS_TOKEN_NAME, data.accessToken, 1); // Access token expires in 1 day (short-lived)
+    setCookie(ACCESS_TOKEN_NAME, data.accessToken, 1); // Access token expires in 15 minutes (short-lived)
     setCookie(REFRESH_TOKEN_NAME, data.refreshToken, COOKIE_EXPIRY_DAYS);
   }
 
